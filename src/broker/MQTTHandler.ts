@@ -77,6 +77,28 @@ export class MQTTHandler extends EventEmitter {
     });
   }
 
+  public static stopListening(topic: string): void {
+    if (!this.client) {
+      throw new Error(
+        genError("MQTT client not initialized", this.className, "stopListening")
+      );
+    }
+
+    this.client.unsubscribe(topic, (err) => {
+      if (err) {
+        console.error(
+          genError(
+            `Failed to unsubscribe from topic: ${topic}`,
+            this.className,
+            "stopListening"
+          )
+        );
+      } else {
+        console.log(`Successfully unsubscribed from topic: ${topic}`);
+      }
+    });
+  }
+
   public static onMessage(
     callback: (data: { topic: string; message: any }) => void
   ): void {
