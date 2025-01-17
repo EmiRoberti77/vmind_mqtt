@@ -15,6 +15,10 @@
   ],
   "author": "Emi Roberti",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EmiRoberti77/vmind_mqtt"
+  },
   "description": "",
   "devDependencies": {
     "tsup": "^8.3.5",
