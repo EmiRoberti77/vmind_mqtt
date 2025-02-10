@@ -1,31 +1,67 @@
 import mqtt, { MqttClient } from "mqtt";
 import { genError, MESSAGES } from "../constants";
 import EventEmitter from "events";
+import { MQTTHandlerOptions } from "../types/mqttHandlerOptions";
 
 export class MQTTHandler extends EventEmitter {
   private static client: MqttClient;
   private static className: string = "MQTTHandler";
   private static emitter: EventEmitter = new EventEmitter();
 
-  // Initialize the MQTT client
+  /**
+   * @deprecated Use initializeWithUrl or initializeWithCAOptions
+   * start client by passing the host url ( this is the minimun requirement to start the client)
+   * this method is here for legacy implementation
+   * @param mqttUrl - the MQTT broker URL.
+   */
   public static initialize(mqttUrl: string): void {
     if (!this.client) {
       console.log("started myqtt");
       this.client = mqtt.connect(mqttUrl);
+      this.initEvent();
+    }
+  }
 
-      this.client.on("connect", () => {
-        console.log(MESSAGES.MQTT_BROKER_CONNECTED);
-      });
-
-      this.client.on("disconnect", () => {
-        console.log(MESSAGES.MQTT_BROKER_DISCONNECTED);
-      });
-
-      this.client.on("error", (err) => {
-        console.error(genError(err.message, this.className, "initialize"));
-      });
+  /**
+   * starts the MQTT client by host name ( this will use default port 8883)
+   * @param mqttUrl - the MQTT URL.
+   */
+  public static initializeWithUrl(mqttUrl: string): void {
+    if (!this.client) {
+      console.log("started myqtt");
+      this.client = mqtt.connect(mqttUrl);
+      this.initEvent();
       console.log("complted mqtt init");
     }
+  }
+
+  /**
+   * start the mqtt client with CA security, in the options:MQTTHandlerOptions pass
+   * in the file path to the certificates
+   * @param options - MQTTHandlerOptions
+   */
+  public static initializeWithCAOptions(options: MQTTHandlerOptions): void {
+    if (!this.client) {
+      console.log("started myqtt");
+      this.client = mqtt.connect(options);
+      this.initEvent();
+      console.log("complted mqtt init");
+    }
+  }
+
+  private static initEvent() {
+    this.client.on("connect", () => {
+      console.log(MESSAGES.MQTT_BROKER_CONNECTED);
+    });
+
+    this.client.on("disconnect", () => {
+      console.log(MESSAGES.MQTT_BROKER_DISCONNECTED);
+    });
+
+    this.client.on("error", (err) => {
+      console.error(genError(err.message, this.className, "initialize"));
+    });
+    console.log("complted mqtt init");
   }
 
   // Publish a message to a topic

@@ -14,8 +14,9 @@ export enum MESSAGES {
   MQTT_BROKER_DISCONNECTED = "mqtt broker disconnected",
   MQTT_BROKER_END = "mqtt broker end",
   MQTT_BROKER_CONNECTION_ERR = "mqtt broker connection error",
+  MQTT_CLIENT_NOT_INIT = "mqtt client is not initialised",
 }
 
 export enum ERRORS {
-  NULL_INSTANCE = "null instance",
+  NULL_INSTANCE = "mqtt client null instance",
 }

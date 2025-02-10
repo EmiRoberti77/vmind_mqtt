@@ -2,101 +2,76 @@
 
 ## Overview
 
-The MQTTHandler library is a lightweight, static TypeScript-based MQTT broker utility designed to simplify the use of the MQTT protocol for IoT and real-time messaging. The library uses a static approach to remove the need for repeated instantiation, ensures a single connection across your application, and provides robust event-driven communication via EventEmitter.
+The **MQTTHandler** library is a lightweight, static TypeScript-based MQTT client utility designed to simplify real-time messaging for IoT applications. It ensures a **single MQTT connection** across your application and provides robust **event-driven communication** via `EventEmitter`.
 
 ## Features
 
-- Static Design: Simplifies usage by managing a single shared MQTT client instance.
-- Event-Driven: Uses EventEmitter to handle message events seamlessly.
-- Ease of Use: Intuitive APIs for connecting, publishing, and subscribing to MQTT topics.
-- Error Handling: Provides detailed error messages for debugging.
-- Scalable: Designed for lightweight, efficient message handling.
+- **Static Design**: Manages a **single MQTT client instance**, removing the need for multiple instantiations.
+- **Secure Communication**: Supports **SSL/TLS certificates** for **encrypted MQTT connections**.
+- **Event-Driven**: Uses `EventEmitter` for handling incoming messages.
+- **Error Handling**: Provides **detailed error messages** for debugging.
+- **Flexible**: Supports **both plaintext and secure MQTT connections**.
+
+---
 
 ## Installation
 
-Install the library from npm:
+Install the package via **npm**:
 
-```bash
-npm i vmind_mqtt
+```sh
+npm install vmind_mqtt
 ```
 
-## Methods
+---
 
-The `MQTTHandler` library provides the following methods:
+## Deprecation Notice
 
-1. **`initialize(mqttUrl: string): void`**  
-   Initializes the MQTT client with the specified broker URL.  
-   Example:
+⚠️ **`initialize(mqttUrl: string)` is deprecated!**  
+Use **`initializeWithUrl()`** or **`initializeWithCAOptions()`** instead.
 
-   ```typescript
-   MQTTHandler.initialize("mqtt://broker.hivemq.com");
-   ```
-
-2. **`publish(topic: string, message: string): void`**  
-   Publishes a message to the specified topic.  
-   Example:
-
-   ```typescript
-   MQTTHandler.publish(
-     "test/topic",
-     JSON.stringify({ message: "hello, MQTT!" })
-   );
-   ```
-
-3. **`listen(topic: string): void`**  
-   Subscribes to a topic and listens for incoming messages.  
-   Example:
-
-   ```typescript
-   MQTTHandler.listen("test/topic");
-   ```
-
-4. **`onMessage(callback: (data: { topic: string; message: any }) => void): void`**  
-   Registers a callback to handle incoming messages from subscribed topics.  
-   Example:
-
-   ```typescript
-   MQTTHandler.onMessage((data) => {
-     console.log(`Received message from ${data.topic}:`, data.message);
-   });
-   ```
-
-5. **`stopListening(topic: string): void`**  
-   Unsubscribes from a specific topic, stopping the library from receiving messages from it.  
-   Example:
-
-   ```typescript
-   MQTTHandler.stopListening("test/topic");
-   ```
-
-6. **`close(): void`**  
-   Gracefully closes the MQTT connection.  
-   Example:
-   ```typescript
-   MQTTHandler.close();
-   ```
+---
 
 ## Usage
 
-### Initialize the MQTT Client
+### **1. Initialize the MQTT Client**
 
-Before using the library, initialize the MQTT client with the broker URL:
-
-```typescript
-MQTTHandler.initialize("mqtt://broker.hivemq.com");
-```
-
-### Publish a Message
-
-Send a message to a specific topic:
+#### **Option 1: Basic Connection (Unsecured)**
 
 ```typescript
-MQTTHandler.publish("test/topic", JSON.stringify({ message: "hello, MQTT!" }));
+MQTTHandler.initializeWithUrl("mqtt://broker.hivemq.com");
 ```
 
-### Subscribe and Listen to a Topic
+- Uses **default port 1883** for **plaintext (non-TLS)** connections.
 
-Listen for messages from a subscribed topic:
+#### **Option 2: Secure Connection with CA (Recommended)**
+
+```typescript
+MQTTHandler.initializeWithCAOptions({
+  host: "your-mqtt-broker.com",
+  port: 8883,
+  protocol: "mqtts", // Secure MQTT
+  ca: fs.readFileSync("path/to/ca.crt").toString(),
+  cert: fs.readFileSync("path/to/client.crt").toString(),
+  key: fs.readFileSync("path/to/client.key").toString(),
+  rejectUnauthorized: true, // Enforce strict SSL validation in production
+});
+```
+
+- Uses **port 8883** for **SSL/TLS** communication.
+- Requires **valid CA, client certificate, and client key**.
+- Prevents **MITM attacks** by enforcing **encryption**.
+
+---
+
+### **2. Publish a Message**
+
+```typescript
+MQTTHandler.publish("test/topic", JSON.stringify({ message: "Hello, MQTT!" }));
+```
+
+---
+
+### **3. Subscribe & Listen to a Topic**
 
 ```typescript
 MQTTHandler.listen("test/topic");
@@ -106,78 +81,100 @@ MQTTHandler.onMessage((data) => {
 });
 ```
 
-### Stop Listening to a Topic
+---
 
-Unsubscribe from a topic to stop receiving messages:
+### **4. Stop Listening to a Topic**
 
 ```typescript
 MQTTHandler.stopListening("test/topic");
 ```
 
-### Close the MQTT Connection
+---
 
-Gracefully close the MQTT connection when done:
+### **5. Close the MQTT Connection**
 
 ```typescript
 MQTTHandler.close();
 ```
 
-## Example
+---
+
+## API Reference
+
+| Method                                                 | Description                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------- |
+| `initialize(mqttUrl: string)`                          | **(Deprecated)** Initializes MQTT client with a broker URL.         |
+| `initializeWithUrl(mqttUrl: string)`                   | Initializes MQTT using a broker URL.                                |
+| `initializeWithCAOptions(options: MQTTHandlerOptions)` | **(Recommended)** Secure MQTT connection with SSL/TLS certificates. |
+| `publish(topic: string, message: string)`              | Publishes a message to an MQTT topic.                               |
+| `listen(topic: string)`                                | Subscribes to an MQTT topic.                                        |
+| `onMessage(callback)`                                  | Registers a callback to handle received messages.                   |
+| `stopListening(topic: string)`                         | Unsubscribes from a topic.                                          |
+| `close()`                                              | Gracefully closes the MQTT connection.                              |
+
+---
+
+## Example Usage
 
 ```typescript
 import { MQTTHandler } from "vmind_mqtt/dist";
+import fs from "fs";
 
-// Initialize the client
-MQTTHandler.initialize("mqtt://broker.hivemq.com");
+// Secure connection with SSL/TLS
+MQTTHandler.initializeWithCAOptions({
+  host: "your-mqtt-broker.com",
+  port: 8883,
+  protocol: "mqtts",
+  ca: fs.readFileSync("path/to/ca.crt").toString(),
+  cert: fs.readFileSync("path/to/client.crt").toString(),
+  key: fs.readFileSync("path/to/client.key").toString(),
+  rejectUnauthorized: true, // Enforce strict SSL validation
+});
 
 // Subscribe and listen to a topic
 MQTTHandler.listen("example/topic");
 MQTTHandler.onMessage((data) => {
-  console.log(`Received message on topic ${data.topic}:`, data.message);
+  console.log(`Received message from ${data.topic}:`, data.message);
 });
 
 // Publish a message
 MQTTHandler.publish(
   "example/topic",
-  JSON.stringify({ message: "Hello, World!" })
+  JSON.stringify({ message: "Secure MQTT!" })
 );
 
 // Stop listening to the topic
 MQTTHandler.stopListening("example/topic");
 
-// Close the client after some time
+// Close the connection after some time
 setTimeout(() => {
   MQTTHandler.close();
 }, 5000);
 ```
 
-## Advantages of the Static Approach
+---
 
-1. **Singleton Pattern**:  
-   Ensures a single MQTT connection instance across your application, reducing overhead and connection management issues.
+## 🔹 Why Use the Static Approach?
 
-2. **Simplified API**:  
-   No need to instantiate the client repeatedly; directly use static methods to interact with the broker.
+✅ **Singleton Pattern** → Ensures **only one MQTT connection** per application.  
+✅ **Simplified API** → No need for manual instantiation.  
+✅ **Event-Driven Communication** → Uses `EventEmitter` for efficient message handling.  
+✅ **Lightweight & Efficient** → Works well for **IoT & real-time** applications.
 
-3. **Event-Driven Communication**:  
-   Uses EventEmitter to handle messages, enabling clean, modular, and decoupled code.
-
-4. **Lightweight**:  
-   Avoids dependencies on frameworks like Express, making it ideal for small services or microservices.
-
-5. **Flexibility**:  
-   Easily integrates into any TypeScript or Node.js project.
+---
 
 ## License
 
-This library is licensed under the MIT License. See the LICENSE file for details.
+This library is licensed under the **MIT License**. See the LICENSE file for details.
 
 ## Contributing
 
-Contributions are welcome! If you find a bug or want to add features, feel free to submit a pull request or open an issue on the GitHub repository.
+Feel free to submit **issues** or **pull requests** to improve the library!
 
 ## Support
 
-If you encounter any issues or have questions, feel free to contact us or open a support ticket.
+If you encounter any issues, **open a GitHub issue** or reach out for support.
 
-Emi Roberti - Happy Coding
+---
+
+Emi Roberti - Happy coding
