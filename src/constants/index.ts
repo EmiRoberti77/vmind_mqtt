@@ -20,3 +20,5 @@ export enum MESSAGES {
 export enum ERRORS {
   NULL_INSTANCE = "mqtt client null instance",
 }
+
+export const MQTT_LOCAL_HOST = "mqtt://localhost";

@@ -1,38 +1,73 @@
 import mqtt, { MqttClient } from "mqtt";
-import { genError, MESSAGES } from "../constants";
+import { genError, MESSAGES, MQTT_LOCAL_HOST } from "../constants";
 import EventEmitter from "events";
 import { MQTTHandlerOptions } from "../types/mqttHandlerOptions";
+import { rejects } from "assert";
 
 export class MQTTHandler extends EventEmitter {
   private static client: MqttClient;
-  private static className: string = "MQTTHandler";
+  private static className: string = this.constructor.name;
   private static emitter: EventEmitter = new EventEmitter();
 
   /**
-   * @deprecated Use initializeWithUrl or initializeWithCAOptions
-   * start client by passing the host url ( this is the minimun requirement to start the client)
-   * this method is here for legacy implementation
-   * @param mqttUrl - the MQTT broker URL.
+   * Overloaded function definition
+   *
+   * Initializes the MQTT client with the default host.
+   * @returns A promise that resolves to `true` when initialization is successful.
    */
-  public static initialize(mqttUrl: string): void {
-    if (!this.client) {
-      console.log("started myqtt");
-      this.client = mqtt.connect(mqttUrl);
-      this.initEvent();
-    }
-  }
+  public static async initialize(): Promise<boolean>;
 
   /**
-   * starts the MQTT client by host name ( this will use default port 8883)
-   * @param mqttUrl - the MQTT URL.
+   * Overloaded function definition
+   *
+   * Initializes the MQTT client with a specified host URL.
+   * @param args The MQTT broker URL to connect to.
+   * @returns A promise that resolves to `true` when initialization is successful.
    */
-  public static initializeWithUrl(mqttUrl: string): void {
-    if (!this.client) {
-      console.log("started myqtt");
-      this.client = mqtt.connect(mqttUrl);
-      this.initEvent();
-      console.log("complted mqtt init");
+  public static async initialize(args?: string): Promise<boolean>;
+
+  /**
+   * Initializes the MQTT client, either with a default host or a specified URL.
+   *
+   * - If `args` is provided, it connects to the given MQTT broker URL.
+   * - If `args` is not provided, it connects to a default MQTT broker.
+   * - If the client is already initialized, it immediately resolves to `true`.
+   *
+   * @param args (Optional) The MQTT broker URL to connect to.
+   * @returns A promise that resolves to `true` on successful connection,
+   *          or rejects if an error occurs.
+   */
+
+  public static async initialize(args?: string): Promise<boolean> {
+    if (this.client) {
+      //if client is already activated then return the promise to true
+      return Promise.resolve(true);
     }
+    return await new Promise<boolean>((resolve, reject) => {
+      let host = MQTT_LOCAL_HOST;
+      if (args) host = args;
+      try {
+        console.log("started myqtt");
+        this.client = mqtt.connect(host);
+        this.client.on("connect", () => {
+          console.log(MESSAGES.MQTT_BROKER_CONNECTED);
+          resolve(true);
+        });
+
+        this.client.on("disconnect", () => {
+          console.log(MESSAGES.MQTT_BROKER_DISCONNECTED);
+        });
+
+        this.client.on("error", (err) => {
+          const error = genError(err.message, this.className, "initialize");
+          console.error(error);
+          reject(error);
+        });
+        console.log("complted mqtt init");
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
   /**
@@ -82,13 +117,12 @@ export class MQTTHandler extends EventEmitter {
     });
   }
 
-  public static listen(topic: string) {
+  public static async listen(topic: string) {
     if (!this.client) {
-      throw new Error(
+      new Error(
         genError("MQTT client not initialized", this.className, "listen")
       );
     }
-
     this.client.subscribe(topic, { qos: 1 }, (err) => {
       if (err) {
         throw new Error(
